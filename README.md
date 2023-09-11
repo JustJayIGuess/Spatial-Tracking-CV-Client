@@ -1,5 +1,7 @@
 # Spatial-Tracking-Client
  Client-side code for spatial tracking system
+# Build
+ Just run ./build.sh :)
 # Basic Usage
  First, run `./Server` (built from EchoTestServer; just a test server to echo incoming data) and input the number of clients that will be connecting.
  The server will now listen for clients requesting to connect, and will switch to data receiving mode once enough clients connect.
