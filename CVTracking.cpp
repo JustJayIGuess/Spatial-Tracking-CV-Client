@@ -15,7 +15,7 @@ namespace po = boost::program_options;
 
 #define PORT 1338
 #define BROAD_PORT 1339
-#define MAXLINE 16
+#define MAXLINE 64
 #define REQUEST_MESSAGE "STIPRQST"      // Spatial Tracking IP ReQueST
 #define RESPONSE_MESSAGE "STIPRSPN"     // Spatial Tracking IP ReSPoNse
 #define VISUAL true
@@ -231,6 +231,7 @@ int main(int argc, char** argv) {
 			std::string input = std::to_string(angleX) + "," + std::to_string(angleY);
 
 			const char* message = input.c_str();
+			std::cout << "Sending: " << message << std::endl;
 			sendto(sockfd, (const char*)message, strlen(message), MSG_CONFIRM, (const struct sockaddr*)&servaddr, sizeof(servaddr));
 
 			n = recvfrom(sockfd, (char*)buffer, MAXLINE, MSG_WAITALL, (struct sockaddr*) &servaddr, &len);

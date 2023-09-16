@@ -9,7 +9,7 @@
 
 #define PORT 1338
 #define BROAD_PORT 1339
-#define MAXLINE 16
+#define MAXLINE 64
 #define RESPONSE_MESSAGE "STIPRSPN"	// Spatial Tracking IP ReSPoNse
 #define REQUEST_MESSAGE "STIPRQST"	// Spatial Tracking IP ReQueST
 #define OK_MESSAGE "STDATAOK"		// Spatial Tracking DATA OK
@@ -70,6 +70,11 @@ int main() {
 	int n;
 
 	// Listen for clients asking via broadcast for server IP
+	// TODO: Make this into an update() loop that is called at a fixed frequency, poll 
+	//  both datasock and dscsock each update to allow clients to connect and disconnect 
+	//  at any time over dscsock. Clients broadcast over BROAD_PORT to join and leave 
+	//  through direct message, still over BROAD_PORT through dscsock. Maybe rename 
+	//  BROAD_PORT to DISC_PORT and PORT to DATA_PORT to better communicate this.
 	bool connecting = true;
 	int numconnected = 0;
 	while (connecting) {
