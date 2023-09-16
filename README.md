@@ -7,3 +7,5 @@
  The server will now listen for clients requesting to connect, and will switch to data receiving mode once enough clients connect.
  To run a client, run `./CVTracking -h <horizontal FOV> -v <vertical FOV> -t <brightness threshold>` on a machine connected to the same local network as the server.
  If all works correctly, the server will detect the client's broadcast and respond with its ip to initiate direct communication. The client will begin sending data when a valid tracking contour is detected through the camera.
+# TODO
+- [ ] Implement client-side data simulation; probably identified through a boost programoption with some parameters for position and orientation.
