@@ -231,7 +231,6 @@ int main(int argc, char** argv) {
 			std::string input = std::to_string(angleX) + "," + std::to_string(angleY);
 
 			const char* message = input.c_str();
-			std::cout << "Sending: " << message << std::endl;
 			sendto(sockfd, (const char*)message, strlen(message), MSG_CONFIRM, (const struct sockaddr*)&servaddr, sizeof(servaddr));
 
 			n = recvfrom(sockfd, (char*)buffer, MAXLINE, MSG_WAITALL, (struct sockaddr*) &servaddr, &len);
