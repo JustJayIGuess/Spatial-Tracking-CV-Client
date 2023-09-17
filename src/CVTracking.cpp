@@ -11,7 +11,10 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <boost/program_options.hpp>
+#include "Vector3.h"
+
 namespace po = boost::program_options;
+using namespace mathutils;
 
 #define PORT 1338
 #define BROAD_PORT 1339
@@ -32,8 +35,10 @@ static int windowWidth = 0;
 static int windowHeight = 0;
 static float horizontalFOV = 0.0f;
 static float verticalFOV = 0.0f;
+static bool doSimulateData = false;
 
 static bool liveAdjustThresh = false;
+
 
 #if VISUAL
 void mouse_callback(int  event, int  x, int  y, int  flag, void* param)
@@ -76,6 +81,11 @@ bool compareContourAreas(std::vector<cv::Point> contour1, std::vector<cv::Point>
 }
 
 int main(int argc, char** argv) {
+	std::srand(static_cast<unsigned>(std::time(0)));
+
+	Vector3 vec = Vector3::random();
+	vec.print();
+
 	// Program options
 	po::options_description desc("Usage");
 	desc.add_options()
@@ -83,6 +93,7 @@ int main(int argc, char** argv) {
 		("horizontal,h", po::value<float>(&horizontalFOV)->default_value(62.2f), "horizontal FOV")
 		("vertical,v", po::value<float>(&verticalFOV)->default_value(48.8f), "vertical FOV")
 		("threshold,t", po::value<float>(&threshold)->implicit_value(0.9f), "threshold brightness (0.0-1.0)")
+		("simulate,s", po::value<bool>(&doSimulateData)->implicit_value(true),"simulate camera data")
 	;
 
 	po::variables_map vm;
@@ -93,6 +104,8 @@ int main(int argc, char** argv) {
 		std::cout << desc << "\n";
 		return 0;
 	}
+
+	std::cout << "Do simulate: " << doSimulateData << std::endl;
 
 	// OpenCV Variables
 	cv::Mat image;
