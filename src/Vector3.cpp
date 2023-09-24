@@ -1,5 +1,6 @@
 #include "Vector3.h"
 #include <iostream>
+#include "math.h"
 
 using namespace mathutils;
 mathutils::Vector3::Vector3() {
@@ -22,12 +23,42 @@ mathutils::Vector3 mathutils::Vector3::random() {
 	return Vector3(x, y, z);
 }
 
+float mathutils::Vector3::sqr_magnitude() {
+	return x * x + y * y + z * z;
+}
+
+float mathutils::Vector3::magnitude() {
+	return std::sqrt(Vector3::sqr_magnitude());
+}
+
+void mathutils::Vector3::normalize() {
+	float mag = magnitude();
+	x /= mag;
+	y /= mag;
+	z /= mag;
+
+}
+
+void mathutils::Vector3::to_polar() {
+	float theta = std::atan2(y, x);
+	float w = std::sqrt(x * x + y * y);
+	float phi = std::atan2(z, w);
+
+	x = magnitude();
+	y = theta;
+	z = phi;
+}
+
+std::string mathutils::Vector3::to_string() {
+	return "(" + std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(z) + ")"; 
+}
+
 mathutils::Vector3 mathutils::Vector3::random(float min, float max) {
 	return (max - min) * Vector3::random() + Vector3(min, min, min);
 }
 
 void mathutils::Vector3::print() {
-	std::cout << "(" << std::to_string(x) << ", " << std::to_string(y) << ", " << std::to_string(z) << ")" << std::endl;
+	std::cout << this->to_string() << std::endl;
 }
 
 mathutils::Vector3 mathutils::operator+(mathutils::Vector3 a, mathutils::Vector3 b) {

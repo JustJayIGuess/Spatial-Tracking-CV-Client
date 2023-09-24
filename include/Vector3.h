@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 
 namespace mathutils {
 	struct Vector3 {
@@ -9,7 +10,12 @@ namespace mathutils {
 		Vector3(float _x, float _y, float _z);
 		static Vector3 random();
 		static Vector3 random(float min, float max);
+		std::string to_string();
 		void print();
+		void normalize();
+		float sqr_magnitude();
+		float magnitude();
+		void to_polar();
 	};
 
 	Vector3 operator+(Vector3 a, Vector3 b);

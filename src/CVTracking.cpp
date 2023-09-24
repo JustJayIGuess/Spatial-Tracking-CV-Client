@@ -12,16 +12,19 @@
 #include <netinet/in.h>
 #include <boost/program_options.hpp>
 #include "Vector3.h"
+#include <fstream>
 
 namespace po = boost::program_options;
-using namespace mathutils;
+namespace mu = mathutils;
 
+#define SPEED 0.1f
 #define PORT 1338
 #define BROAD_PORT 1339
 #define MAXLINE 64
 #define REQUEST_MESSAGE "STIPRQST"      // Spatial Tracking IP ReQueST
 #define RESPONSE_MESSAGE "STIPRSPN"     // Spatial Tracking IP ReSPoNse
 #define VISUAL true
+#define DISALLOW_NETWORK true
 
 static cv::Point mousePosition(0, 0);
 static int clickCount = 0;
@@ -35,7 +38,7 @@ static int windowWidth = 0;
 static int windowHeight = 0;
 static float horizontalFOV = 0.0f;
 static float verticalFOV = 0.0f;
-static bool doSimulateData = false;
+static std::string simDataFilename;
 
 static bool liveAdjustThresh = false;
 
@@ -80,32 +83,85 @@ bool compareContourAreas(std::vector<cv::Point> contour1, std::vector<cv::Point>
 	return (i < j);
 }
 
+mu::Vector3 get_point_t(float t) {
+	float x = std::cos(t);
+	float y = std::sin(t);
+	float z = std::sin(t * 0.5f);
+	return mu::Vector3(x, y, z);
+}
+
+mu::Vector3 get_angles_to(mu::Vector3 camPos, mu::Vector3 targetPos, mu::Vector3 camEulerAngles) {
+	mu::Vector3 direction = targetPos - camPos;
+	direction.normalize();
+	direction.to_polar();
+	direction.y -= camEulerAngles.y;
+	direction.z -= camEulerAngles.z;
+	return direction;
+}
+
 int main(int argc, char** argv) {
 	std::srand(static_cast<unsigned>(std::time(0)));
-
-	Vector3 vec = Vector3::random();
-	vec.print();
 
 	// Program options
 	po::options_description desc("Usage");
 	desc.add_options()
 		("help", "print help message")
-		("horizontal,h", po::value<float>(&horizontalFOV)->default_value(62.2f), "horizontal FOV")
-		("vertical,v", po::value<float>(&verticalFOV)->default_value(48.8f), "vertical FOV")
-		("threshold,t", po::value<float>(&threshold)->implicit_value(0.9f), "threshold brightness (0.0-1.0)")
-		("simulate,s", po::value<bool>(&doSimulateData)->implicit_value(true),"simulate camera data")
+		("horizontal,h", po::value<float>(&horizontalFOV)->default_value(62.2), "horizontal FOV")
+		("vertical,v", po::value<float>(&verticalFOV)->default_value(48.8), "vertical FOV")
+		("threshold,t", po::value<float>(&threshold)->implicit_value(0.9), "threshold brightness (0.0-1.0)")
+		("simulate,s", po::value<std::string>(&simDataFilename)->required(), "simulate camera data and save to specified file")
 	;
 
 	po::variables_map vm;
-	po::store(po::parse_command_line(argc, argv, desc), vm);
-	po::notify(vm);
-
-	if (vm.count("help")) {
-		std::cout << desc << "\n";
-		return 0;
+	
+	try
+	{
+		po::store(po::parse_command_line(argc, argv, desc), vm);
+		po::notify(vm);		
+	}
+	catch(const po::error &e)
+	{
+		std::cerr << "\n\nError: Command line arguments invalid." << std::endl;
+		std::cerr << desc << std::endl;
+		std::cerr << e.what() << std::endl;
+		return 1;
 	}
 
-	std::cout << "Do simulate: " << doSimulateData << std::endl;
+	if (vm.count("help")) {
+		std::cout << desc << std::endl;
+		return 0;
+	}
+	
+	if (vm.count("simulate"))
+	{
+		std::ofstream simData;
+		simData.open(simDataFilename, std::ios::out);
+
+		if (!simData)
+		{
+			std::cerr << "File couldn\'t open! (" << simDataFilename << ")" << std::endl;
+			return 1;
+		}
+
+		mu::Vector3 cam = mu::Vector3();//mu::Vector3::random(-2.0f, 2.0f);
+
+		float t = 0.0f;
+		for (size_t i = 0; i < 100; i++)
+		{
+			t += SPEED;
+		
+			mu::Vector3 target = get_point_t(t);
+			mu::Vector3 vec = get_angles_to(cam, target, mu::Vector3());
+			vec = vec / 3.1416f;
+			vec.print();
+			simData << t << "," << vec.to_string() << std::endl;
+		}
+
+		std::cout << "Saving to " << simDataFilename << std::endl;
+		simData.close();
+
+		return 0;
+	}
 
 	// OpenCV Variables
 	cv::Mat image;
@@ -162,6 +218,7 @@ int main(int argc, char** argv) {
 	windowWidth = image.cols;
 	windowHeight = image.rows;
 
+#if !DISALLOW_NETWORK
 	// Server variables
 	int sockfd;
 	char buffer[MAXLINE];
@@ -214,6 +271,7 @@ int main(int argc, char** argv) {
 					break;
 			}
 	}
+#endif
 
 	while (true) {
 		cap >> image;
@@ -242,7 +300,7 @@ int main(int argc, char** argv) {
 #endif
 
 			std::string input = std::to_string(angleX) + "," + std::to_string(angleY);
-
+#if !DISALLOW_NETWORK
 			const char* message = input.c_str();
 			sendto(sockfd, (const char*)message, strlen(message), MSG_CONFIRM, (const struct sockaddr*)&servaddr, sizeof(servaddr));
 
@@ -260,6 +318,7 @@ int main(int argc, char** argv) {
 				std::cout << stat << "  \r";
 				std::cout.flush();
 			}
+#endif
 		}
 		else {
 			std::cout << "No data.          \r";
@@ -272,7 +331,8 @@ int main(int argc, char** argv) {
 #endif
 		cv::waitKey(1);
 	}
-
+#if !DISALLOW_NETWORK
 	close(sockfd);
+#endif
 	return 0;
 }
