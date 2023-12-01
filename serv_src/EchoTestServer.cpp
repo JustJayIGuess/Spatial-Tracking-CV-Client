@@ -85,7 +85,9 @@ int main() {
 		if (strcmp(buffer, requestmessage) == 0) {
 			printf("\tClient requested IP: %s\n", buffer);
 			sendto(dscsockfd, (const char*)responsemessage, strlen(responsemessage), MSG_CONFIRM, (const struct sockaddr*)&cliaddr, len);
-			std::cout << "\tResponse message sent back." << std::endl;
+			char addrstr[INET_ADDRSTRLEN];
+			inet_ntop(AF_INET, &(cliaddr.sin_addr), addrstr, INET_ADDRSTRLEN);
+			std::cout << "\tResponse message sent back to " << addrstr << std::endl;
 			numconnected++;
 			if (numconnected == expectedclients) {
 				connecting = false;

@@ -24,7 +24,7 @@ namespace mu = mathutils;
 #define REQUEST_MESSAGE "STIPRQST"      // Spatial Tracking IP ReQueST
 #define RESPONSE_MESSAGE "STIPRSPN"     // Spatial Tracking IP ReSPoNse
 #define VISUAL true
-#define DISALLOW_NETWORK true
+#define DISALLOW_NETWORK false
 
 static cv::Point mousePosition(0, 0);
 static int clickCount = 0;
@@ -39,6 +39,7 @@ static int windowHeight = 0;
 static float horizontalFOV = 0.0f;
 static float verticalFOV = 0.0f;
 static std::string simDataFilename;
+static std::string camerasConfigFilename;
 
 static bool liveAdjustThresh = false;
 
@@ -109,7 +110,8 @@ int main(int argc, char** argv) {
 		("horizontal,h", po::value<float>(&horizontalFOV)->default_value(62.2), "horizontal FOV")
 		("vertical,v", po::value<float>(&verticalFOV)->default_value(48.8), "vertical FOV")
 		("threshold,t", po::value<float>(&threshold)->implicit_value(0.9), "threshold brightness (0.0-1.0)")
-		("simulate,s", po::value<std::string>(&simDataFilename)->required(), "simulate camera data and save to specified file")
+		("simulate,s", po::value<std::string>(&simDataFilename), "simulate camera data and save to specified file")
+		("cameras,c", po::value<std::string>(&camerasConfigFilename), "define positions and orientations of cameras for simulated data")
 	;
 
 	po::variables_map vm;
@@ -134,6 +136,46 @@ int main(int argc, char** argv) {
 	
 	if (vm.count("simulate"))
 	{
+		if (!vm.count("cameras"))
+		{
+			std::cerr << "Error: Cameras config file not given!" << std::endl;
+			std::cerr << desc << std::endl;
+			return 1;
+		}
+		
+		std::ifstream camerasConfig;
+		camerasConfig.open(camerasConfigFilename, std::ios::in);
+		
+		while (camerasConfig)
+		{
+			std::string line;
+			std::getline(camerasConfig, line);
+			std::cout << line << std::endl;
+
+			std::stringstream lineStream(line);
+			std::string curr;
+
+			std::getline(lineStream, curr, ',');
+			int id = stoi(curr);
+			while (std::getline(lineStream, curr, ','))
+			{
+				try 
+				{
+					std::cout << "Parse: " << curr << std::endl;
+					int id = std::stof(curr);
+					std::cout << id << std::endl;
+				}
+				catch (std::exception &e)
+				{
+					std::cerr << "Error during parsing camera congfig file!" << std::endl;
+					std::cerr << e.what() << std::endl;
+				}
+			}
+			//break;
+		}
+
+		camerasConfig.close();
+
 		std::ofstream simData;
 		simData.open(simDataFilename, std::ios::out);
 
