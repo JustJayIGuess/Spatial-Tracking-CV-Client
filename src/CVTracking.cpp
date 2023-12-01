@@ -23,7 +23,6 @@ namespace mu = mathutils;
 #define MAXLINE 64
 #define REQUEST_MESSAGE "STIPRQST"      // Spatial Tracking IP ReQueST
 #define RESPONSE_MESSAGE "STIPRSPN"     // Spatial Tracking IP ReSPoNse
-#define VISUAL true
 #define DISALLOW_NETWORK false
 
 static cv::Point mousePosition(0, 0);
@@ -32,19 +31,19 @@ static cv::Point clickPos1(0, 0);
 static cv::Point clickPos2(0, 0);
 
 static double dist = 0.0;
-
-static float threshold = 0.8f;
 static int windowWidth = 0;
 static int windowHeight = 0;
+
+static float threshold = 0.8f;
 static float horizontalFOV = 0.0f;
 static float verticalFOV = 0.0f;
 static std::string simDataFilename;
 static std::string camerasConfigFilename;
+static bool VISUAL = true;
 
 static bool liveAdjustThresh = false;
 
 
-#if VISUAL
 void mouse_callback(int  event, int  x, int  y, int  flag, void* param)
 {
 	if (event == cv::EVENT_MOUSEMOVE && liveAdjustThresh) {
@@ -76,7 +75,6 @@ void mouse_callback(int  event, int  x, int  y, int  flag, void* param)
 		std::cout << dist << std::endl;
 	}
 }
-#endif
 
 bool compareContourAreas(std::vector<cv::Point> contour1, std::vector<cv::Point> contour2) {
 	double i = std::fabs(cv::contourArea(cv::Mat(contour1)));
@@ -112,6 +110,7 @@ int main(int argc, char** argv) {
 		("threshold,t", po::value<float>(&threshold)->implicit_value(0.9), "threshold brightness (0.0-1.0)")
 		("simulate,s", po::value<std::string>(&simDataFilename), "simulate camera data and save to specified file")
 		("cameras,c", po::value<std::string>(&camerasConfigFilename), "define positions and orientations of cameras for simulated data")
+		("no-gui", "run without GUI output")
 	;
 
 	po::variables_map vm;
@@ -133,6 +132,8 @@ int main(int argc, char** argv) {
 		std::cout << desc << std::endl;
 		return 0;
 	}
+
+	VISUAL = !vm.count("no-gui");
 	
 	if (vm.count("simulate"))
 	{
@@ -209,11 +210,12 @@ int main(int argc, char** argv) {
 	cv::Mat image;
 	cv::Mat splitChannels[3];
 
-#if VISUAL
+	if (VISUAL)
+	{
 	cv::namedWindow("Display window");
 	cv::namedWindow("Alpha");
 	cv::setMouseCallback("Display window", mouse_callback);
-#endif
+	}
 
     // if (argc == 4) {
     //     threshold = atof(argv[1]);
@@ -245,11 +247,9 @@ int main(int argc, char** argv) {
 	cap.set(cv::CAP_PROP_EXPOSURE, 0);
 	cap.set(cv::CAP_PROP_FPS, 30);
 
-#if VISUAL
 	cv::Scalar colour(0, 0, 255);
 	cv::Scalar colour1(0, 255, 0);
 	cv::Scalar colour2(255, 0, 0);
-#endif
 
 	cv::Mat alpha;
 
@@ -335,11 +335,11 @@ int main(int argc, char** argv) {
 			float angleY = 0.5f * verticalFOV * (2.0f * largestContourCentre.y / windowHeight - 1.0f) + 0.1f;
 			// std::cout << "angle: " << angleX << ", " << angleY << " degrees" << std::endl;
 
-
-#if VISUAL
-			cv::drawContours(image, contours, -1, cv::Scalar(0, 255, 0), 1);
-			cv::circle(image, largestContourCentre, 5, colour1, -1);
-#endif
+			if (VISUAL)
+			{
+				cv::drawContours(image, contours, -1, cv::Scalar(0, 255, 0), 1);
+				cv::circle(image, largestContourCentre, 5, colour1, -1);
+			}
 
 			std::string input = std::to_string(angleX) + "," + std::to_string(angleY);
 #if !DISALLOW_NETWORK
@@ -367,10 +367,11 @@ int main(int argc, char** argv) {
 			std::cout.flush();
 		}
 
-#if VISUAL
-		cv::imshow("Display window", image);
-		cv::imshow("Alpha", alpha);
-#endif
+		if (VISUAL)
+		{
+			cv::imshow("Display window", image);
+			cv::imshow("Alpha", alpha);
+		}
 		cv::waitKey(1);
 	}
 #if !DISALLOW_NETWORK
